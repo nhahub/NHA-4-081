@@ -1,0 +1,151 @@
+services:
+  # ==================== SPARK CLUSTER ====================
+  spark:
+    image: mohamedhamed13/spark:3.5.0
+    container_name: spark
+    environment:
+      - SPARK_MODE=master
+    ports:
+      - "7077:7077"
+      - "8080:8080"
+      - "4040:4040"
+    volumes:
+      - .:/project
+
+  spark-worker:
+    image: mohamedhamed13/spark:3.5.0
+    container_name: spark-worker
+    depends_on:
+      - spark
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark:7077
+    ports:
+      - "8081:8081"
+    volumes:
+      - .:/project
+
+  # ==================== JUPYTER NOTEBOOK ====================
+  jupyter:
+    image: jupyter/pyspark-notebook:spark-3.5.0
+    container_name: jupyter
+    ports:
+      - "8888:8888"
+    environment:
+      - PYSPARK_PYTHON=python3
+      - SPARK_MASTER=spark://spark:7077
+    volumes:
+      - .:/project
+    working_dir: /project
+    depends_on:
+      - spark
+    command: start-notebook.sh --NotebookApp.token='' --NotebookApp.password=''
+
+  # ==================== POSTGRES (General) ====================
+  postgres_general:
+    image: postgres:15
+    container_name: postgres_general
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: sessiondb
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+
+  # ==================== pgAdmin ====================
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8085:80"
+    depends_on:
+      - postgres_general
+
+  # ==================== POSTGRES (Airflow Backend) ====================
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+
+  # ==================== AIRFLOW WEBSERVER ====================
+  airflow-webserver:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    container_name: airflow-webserver
+    restart: always
+    ports:
+      - "8089:8080"
+    env_file:
+      - ./.env
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__FERNET_KEY=3DjyQsK6JdTq4zsiK4XHzVmVEMtRzF7jwq9VDuHQx3M=
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - AIRFLOW__CORE__LOAD_EXAMPLES=false
+      - AIRFLOW__WEBSERVER__SECRET_KEY=mysecretkey
+      - JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./scripts:/opt/airflow/scripts
+      - .:/project
+    user: "0:0"
+    command: >
+      bash -c "
+        airflow db init &&
+        airflow users create --username admin --firstname Air --lastname Flow --role Admin --email admin@example.com --password admin &&
+        exec airflow webserver
+      "
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ==================== AIRFLOW SCHEDULER ====================
+  airflow-scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    container_name: airflow-scheduler
+    restart: always
+    env_file:
+      - ./.env
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__FERNET_KEY=3DjyQsK6JdTq4zsiK4XHzVmVEMtRzF7jwq9VDuHQx3M=
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - AIRFLOW__CORE__LOAD_EXAMPLES=false
+      - AIRFLOW__WEBSERVER__SECRET_KEY=mysecretkey
+      - JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./scripts:/opt/airflow/scripts
+      - .:/project
+    user: "0:0"
+    command: >
+      bash -c "
+        airflow db init &&
+        exec airflow scheduler
+      "
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres-db-volume:
