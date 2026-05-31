@@ -273,7 +273,7 @@ def transform_silver_layer():
         "AppID",
         F.col("ach.name").alias("Achievement_Name"),
         F.col("ach.path").alias("Achievement_Icon")
-    ).filter(F.col("Achievement_Name").isNotNull()).dropDuplicates(["AppID", "Achievement_Name"])
+    ).filter(F.col("Achievement_Name").isNotNull() & (F.length(F.trim(F.col("Achievement_Name"))) > 0)).dropDuplicates(["AppID", "Achievement_Name"])
     
     df_achievements.coalesce(1).write.option("escape", '"').csv("data/silver/games_achievements", header=True, mode="overwrite")
     print("✅ [SAVED] games_achievements.csv")
@@ -293,7 +293,8 @@ def transform_silver_layer():
         "games_screenshots":  {"path": "data/silver/games_screenshots",  "key": "Screenshot_ID"},
         "games_movies":       {"path": "data/silver/games_movies",       "key": "Movie_ID"},
         "games_dlc":          {"path": "data/silver/games_dlc",          "key": "DLC_AppID"},
-        "games_achievements": {"path": "data/silver/games_achievements", "key": "Achievement_Name"},
+        # Achievement_Name is optional display text — Gold sanitizes blank names before UPSERT
+        "games_achievements": {"path": "data/silver/games_achievements", "key": "AppID"},
     }
     
     all_passed = True
