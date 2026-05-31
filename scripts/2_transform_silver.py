@@ -174,7 +174,7 @@ def transform_silver_layer():
         F.coalesce(F.col("live_peak_players"), F.lit(0)).alias("Current_Players")
     )
     df_main = df_main.dropDuplicates(["AppID"])
-    df_main.coalesce(1).write.csv("data/silver/games_main", header=True, mode="overwrite")
+    df_main.coalesce(1).write.option("escape", '"').csv("data/silver/games_main", header=True, mode="overwrite")
     print("✅ [SAVED] games_main.csv")
 
     # ============================================================
@@ -191,7 +191,7 @@ def transform_silver_layer():
         F.col("genre.description").alias("Genre_Name")
     ).filter(F.col("Genre_ID").isNotNull()).dropDuplicates(["AppID", "Genre_ID"])
     
-    df_genres.coalesce(1).write.csv("data/silver/games_genres", header=True, mode="overwrite")
+    df_genres.coalesce(1).write.option("escape", '"').csv("data/silver/games_genres", header=True, mode="overwrite")
     print("✅ [SAVED] games_genres.csv")
 
     # ============================================================
@@ -208,7 +208,7 @@ def transform_silver_layer():
         F.col("cat.description").alias("Category_Name")
     ).filter(F.col("Category_ID").isNotNull()).dropDuplicates(["AppID", "Category_ID"])
     
-    df_categories.coalesce(1).write.csv("data/silver/games_categories", header=True, mode="overwrite")
+    df_categories.coalesce(1).write.option("escape", '"').csv("data/silver/games_categories", header=True, mode="overwrite")
     print("✅ [SAVED] games_categories.csv")
 
     # ============================================================
@@ -226,7 +226,7 @@ def transform_silver_layer():
         F.col("ss.path_full").alias("Full_URL")
     ).filter(F.col("Screenshot_ID").isNotNull()).dropDuplicates(["AppID", "Screenshot_ID"])
     
-    df_screenshots.coalesce(1).write.csv("data/silver/games_screenshots", header=True, mode="overwrite")
+    df_screenshots.coalesce(1).write.option("escape", '"').csv("data/silver/games_screenshots", header=True, mode="overwrite")
     print("✅ [SAVED] games_screenshots.csv")
 
     # ============================================================
@@ -245,7 +245,7 @@ def transform_silver_layer():
         F.col("mov.highlight").alias("Highlight")
     ).filter(F.col("Movie_ID").isNotNull()).dropDuplicates(["AppID", "Movie_ID"])
     
-    df_movies.coalesce(1).write.csv("data/silver/games_movies", header=True, mode="overwrite")
+    df_movies.coalesce(1).write.option("escape", '"').csv("data/silver/games_movies", header=True, mode="overwrite")
     print("✅ [SAVED] games_movies.csv")
 
     # ============================================================
@@ -258,7 +258,7 @@ def transform_silver_layer():
         F.explode_outer(F.col("dlc")).alias("DLC_AppID")
     ).filter(F.col("DLC_AppID").isNotNull()).dropDuplicates(["AppID", "DLC_AppID"])
     
-    df_dlc.coalesce(1).write.csv("data/silver/games_dlc", header=True, mode="overwrite")
+    df_dlc.coalesce(1).write.option("escape", '"').csv("data/silver/games_dlc", header=True, mode="overwrite")
     print("✅ [SAVED] games_dlc.csv")
 
     # ============================================================
@@ -275,7 +275,7 @@ def transform_silver_layer():
         F.col("ach.path").alias("Achievement_Icon")
     ).filter(F.col("Achievement_Name").isNotNull()).dropDuplicates(["AppID", "Achievement_Name"])
     
-    df_achievements.coalesce(1).write.csv("data/silver/games_achievements", header=True, mode="overwrite")
+    df_achievements.coalesce(1).write.option("escape", '"').csv("data/silver/games_achievements", header=True, mode="overwrite")
     print("✅ [SAVED] games_achievements.csv")
 
     # ============================================================

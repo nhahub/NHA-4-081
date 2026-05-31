@@ -16,12 +16,13 @@ default_args = {
 }
 
 with DAG(
-    dag_id="steam_daily_pipeline",
+    dag_id="steam_hourly_pipeline",
     default_args=default_args,
-    description="Daily Steam ETL: Bronze (API) → Silver (PySpark) → Gold (PostgreSQL)",
-    schedule_interval="@daily",
+    description="Hourly Steam ETL (Rate-Limit Safe): Bronze (API) → Silver (Spark) → Gold (DB)",
+    schedule_interval="@hourly",
     start_date=datetime(2025, 1, 1),
     catchup=False,
+    max_active_runs=1,
     tags=["steam", "etl", "medallion"],
 ) as dag:
 

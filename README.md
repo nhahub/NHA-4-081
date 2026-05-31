@@ -91,12 +91,13 @@ This pipeline was designed with cloud migration in mind. In the next phase, the 
 
 ## 🚀 How to Run Locally
 
-1. Create a `.env` file at the root containing your `STEAM_API_KEY` and Database Credentials.
+1. Create a `.env` file at the root containing your `STEAM_API_KEY` and Database Credentials (see `.env.example`).
 2. Spin up the cluster:
    ```bash
    docker-compose build airflow-webserver airflow-scheduler
    docker-compose up -d
    ```
-3. Navigate to `localhost:8080`, unpause the DAG `steam_daily_pipeline`, and watch the jobs execute interactively.
+3. Navigate to `localhost:8089` (Airflow UI), unpause the DAG `steam_hourly_pipeline`, and watch the jobs execute interactively.
+4. Open the `Dashboard.pbix` in Power BI and import the `Steam_Dark_Theme.json` file via the View > Themes tab to instantly apply the dark-mode styling.
 
 ![Airflow DAG](images/airflow_dag.png)

@@ -20,5 +20,5 @@ RUN pip install --no-cache-dir \
     psycopg2-binary
 
 # Make airflow user's packages visible when running as root (user 0:0)
-ENV PYTHONPATH="/home/airflow/.local/lib/python3.9/site-packages:${PYTHONPATH}"
+ENV PYTHONPATH="/home/airflow/.local/lib/python3.9/site-packages:${PYTHONPATH:-}"
 ENV PATH="/home/airflow/.local/bin:${PATH}"

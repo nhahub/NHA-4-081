@@ -1,0 +1,51 @@
+{
+    "name": "Steam Complete Dark Theme",
+    "dataColors": [
+        "#00FFFF", 
+        "#9D00FF", 
+        "#00FF7F", 
+        "#FF007F", 
+        "#FFD700", 
+        "#FF4500", 
+        "#1E90FF", 
+        "#8A2BE2"
+    ],
+    "background": "#0D1117",
+    "foreground": "#F2F2F2",
+    "tableAccent": "#00FFFF",
+    "textClasses": {
+        "label": {
+            "color": "#E0E0E0",
+            "fontFace": "Segoe UI",
+            "fontSize": 10
+        },
+        "callout": {
+            "color": "#FFFFFF",
+            "fontFace": "Segoe UI Semibold",
+            "fontSize": 20
+        },
+        "title": {
+            "color": "#FFFFFF",
+            "fontFace": "Segoe UI Semibold",
+            "fontSize": 12
+        },
+        "header": {
+            "color": "#FFFFFF",
+            "fontFace": "Segoe UI Semibold",
+            "fontSize": 11
+        }
+    },
+    "visualStyles": {
+        "*": {
+            "*": {
+                "background": [{ "show": false }],
+                "outlines": [{ "show": false }]
+            }
+        },
+        "page": {
+            "*": {
+                "background": [{ "color": { "solid": { "color": "#0D1117" } }, "transparency": 0 }]
+            }
+        }
+    }
+}

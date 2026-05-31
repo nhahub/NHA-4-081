@@ -84,7 +84,12 @@ def discover_new_games(registry, limit=200):
             if str(app['appid']) not in known_ids and app.get('name', '').strip()
         ]
         
-        print(f"   🆕 Undiscovered apps: {len(new_apps):,}")
+        # 🌟 MAGIC TWEAK: Sort AppIDs descending. 
+        # Steam assigns AppIDs sequentially. Higher AppID = Newer Game.
+        # This forces the pipeline to always pull the newest releases instead of ancient random games!
+        new_apps.sort(reverse=True)
+        
+        print(f"   🆕 Undiscovered apps (Newest First): {len(new_apps):,}")
         return new_apps[:limit]  # Return a batch for this run
     except Exception as e:
         print(f"   ⚠️ Discovery failed: {e}")
@@ -210,11 +215,23 @@ def extract_steam_bronze_data():
         reviews_url = f"https://store.steampowered.com/appreviews/{appid}?json=1&language=all&purchase_type=all&num_per_page=0"
         
         try:
-            store_res = http.get(store_url, timeout=(10, 30)).json()
-            time.sleep(1.0)
+            store_req = http.get(store_url, timeout=(10, 30))
+            if store_req.status_code == 429:
+                print("\n🚨 [RATE LIMIT] Exceeded Steam Store API rate limit! Backing off for 5 minutes...")
+                time.sleep(300)
+                continue
             
-            review_res = http.get(reviews_url, timeout=(10, 30)).json()
-            time.sleep(1.0)
+            store_res = store_req.json()
+            time.sleep(1.5)  # Strict 1.5s pace for the Store API
+            
+            review_req = http.get(reviews_url, timeout=(10, 30))
+            if review_req.status_code == 429:
+                print("\n🚨 [RATE LIMIT] Exceeded Steam Reviews API rate limit! Backing off for 5 minutes...")
+                time.sleep(300)
+                continue
+                
+            review_res = review_req.json()
+            time.sleep(0.5)  # 0.5s pace for Review API
             
             if store_res[str(appid)]['success']:
                 game_data = store_res[str(appid)]['data']
