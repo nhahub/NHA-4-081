@@ -16,9 +16,8 @@ BATCH_SIZE = int(os.getenv("BATCH_SIZE", "100"))
 STALE_HOURS = int(os.getenv("STALE_HOURS", "24"))  # Refresh games older than this
 
 # 📂 File paths
-REGISTRY_PATH   = "data/game_registry.json"
-STORE_PATH      = "data/bronze/store_raw.json"
-REVIEWS_PATH    = "data/bronze/reviews_raw.json"
+BRONZE_DIR     = "data/bronze"
+REGISTRY_PATH  = "data/game_registry.json"
 
 # 🛡️ Network Armor
 retry_strategy = Retry(total=3, status_forcelist=[429, 500, 502, 503, 504], backoff_factor=1)
@@ -45,20 +44,16 @@ def save_registry(registry):
         json.dump(registry, f, indent=2, ensure_ascii=False)
 
 
-# ============================================================
-# 📂 Bronze Data — Load/merge existing data
-# ============================================================
-def load_existing_bronze(filepath):
-    if os.path.exists(filepath):
-        with open(filepath, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            return {item['appid']: item for item in data if 'appid' in item}
-    return {}
-
-def save_bronze(data_dict, filepath):
+def save_bronze(records, filepath):
+    """Stream-write a list of dicts to JSON, one record per line, to avoid RAM spikes."""
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     with open(filepath, "w", encoding="utf-8") as f:
-        json.dump(list(data_dict.values()), f, indent=4, ensure_ascii=False)
+        f.write("[\n")
+        for i, item in enumerate(records):
+            f.write(json.dumps(item, ensure_ascii=False))
+            if i < len(records) - 1:
+                f.write(",\n")
+        f.write("\n]")
 
 
 # ============================================================
@@ -198,15 +193,14 @@ def extract_steam_bronze_data():
     source_str = ", ".join(f"{v} {k}" for k, v in sources.items())
     print(f"🎯 [QUEUE] Batch: {len(batch)} games ({source_str})")
 
-    # --- Step 5: Load existing bronze data for merging ---
-    store_data = load_existing_bronze(STORE_PATH)
-    reviews_data = load_existing_bronze(REVIEWS_PATH)
-    print(f"📦 [BRONZE] Existing: {len(store_data)} store, {len(reviews_data)} reviews")
+    # --- Step 5: Fetch store + review data (batch-only, no legacy load) ---
+    timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    store_records  = []  # Only this run's games — never loads the full archive
+    review_records = []
 
-    # --- Step 6: Fetch store + review data ---
     fetched = 0
     failed_ids = []
-    
+
     for item in batch:
         appid = item['appid']
         print(f"📡 [{fetched+1}/{len(batch)}] AppID {appid} [{item['source']}]...", end=" ")
@@ -237,23 +231,23 @@ def extract_steam_bronze_data():
                 game_data = store_res[str(appid)]['data']
                 game_data['appid'] = appid
                 game_data['live_peak_players'] = item['peak_players']
-                
-                store_data[appid] = game_data
-                
+
+                store_records.append(game_data)
+
                 if review_res.get('success') == 1:
                     summary = review_res.get('query_summary', {})
                 else:
                     summary = {"total_positive": 0, "total_negative": 0}
                 summary['appid'] = appid
-                reviews_data[appid] = summary
-                
+                review_records.append(summary)
+
                 registry[str(appid)] = {
                     "name": game_data.get('name', 'Unknown'),
                     "rank": item['rank'],
                     "peak_players": item['peak_players'],
                     "last_updated": datetime.utcnow().isoformat(),
                 }
-                
+
                 fetched += 1
                 print(f"✅ {game_data['name']}")
             else:
@@ -279,23 +273,21 @@ def extract_steam_bronze_data():
     print("=" * 60)
     
     passed = True
-    
-    if fetched == 0 and len(store_data) > 0:
-        print(f"   ⚠️ No NEW games fetched, but {len(store_data)} existing games preserved.")
-    elif fetched == 0:
-        print("   ❌ No games fetched and no existing data!")
+
+    if fetched == 0:
+        print("   ❌ No games fetched this run!")
         passed = False
     else:
         print(f"   ✅ Fetched: {fetched} games this run")
-    
-    if len(store_data) != len(reviews_data):
-        print(f"   ❌ COUNT MISMATCH: {len(store_data)} store vs {len(reviews_data)} reviews")
+
+    if len(store_records) != len(review_records):
+        print(f"   ❌ COUNT MISMATCH: {len(store_records)} store vs {len(review_records)} reviews")
         passed = False
     else:
-        print(f"   ✅ Store/Reviews count match: {len(store_data)} total")
-    
-    store_ids = set(store_data.keys())
-    review_ids = set(reviews_data.keys())
+        print(f"   ✅ Store/Reviews count match: {len(store_records)} records")
+
+    store_ids  = {r['appid'] for r in store_records}
+    review_ids = {r['appid'] for r in review_records}
     if store_ids != review_ids:
         missing = store_ids.symmetric_difference(review_ids)
         print(f"   ❌ AppID mismatch between store and reviews: {missing}")
@@ -312,13 +304,15 @@ def extract_steam_bronze_data():
         sys.exit(1)
     print("✅ [VALIDATION PASSED]\n")
 
-    # --- Step 7: Save everything ---
-    save_bronze(store_data, STORE_PATH)
-    save_bronze(reviews_data, REVIEWS_PATH)
+    # --- Step 7: Save this batch to timestamped files ---
+    store_path   = f"{BRONZE_DIR}/store_raw_{timestamp}.json"
+    reviews_path = f"{BRONZE_DIR}/reviews_raw_{timestamp}.json"
+    save_bronze(store_records,  store_path)
+    save_bronze(review_records, reviews_path)
     save_registry(registry)
-    
-    print(f"🎉 [COMPLETE] Bronze: {len(store_data)} total games ({fetched} new/refreshed)")
-    print(f"   📋 Registry: {len(registry)} games tracked")
+
+    print(f"🎉 [COMPLETE] Saved batch of {fetched} games → {store_path}")
+    print(f"   📋 Registry: {len(registry)} games tracked total")
 
 if __name__ == "__main__":
     extract_steam_bronze_data()

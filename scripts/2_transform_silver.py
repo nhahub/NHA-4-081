@@ -59,21 +59,35 @@ def transform_silver_layer():
     # Register HTML stripper as a Spark UDF
     strip_html_udf = F.udf(strip_html, StringType())
 
-    # 2. Load the Bronze Data
-    df_store = spark.read.option("multiline", "true").json("data/bronze/store_raw.json")
-    df_reviews = spark.read.option("multiline", "true").json("data/bronze/reviews_raw.json")
+    from pyspark.sql.window import Window
+
+    # 2. Load ALL Bronze batch files via wildcard — PySpark handles Big Data, Python doesn't
+    df_store_raw   = spark.read.option("multiline", "true").json("data/bronze/store_raw_*.json") \
+                          .withColumn("_src_file", F.input_file_name())
+    df_reviews_raw = spark.read.option("multiline", "true").json("data/bronze/reviews_raw_*.json") \
+                          .withColumn("_src_file", F.input_file_name())
+
+    # Deduplicate: keep the most recently fetched record per AppID
+    # File names contain timestamps (store_raw_YYYYMMDD_HHMMSS.json), so lexicographic desc = newest first
+    store_w   = Window.partitionBy("appid").orderBy(F.col("_src_file").desc())
+    reviews_w = Window.partitionBy("appid").orderBy(F.col("_src_file").desc())
+
+    df_store   = df_store_raw.withColumn("_rn", F.row_number().over(store_w)) \
+                             .filter(F.col("_rn") == 1).drop("_rn", "_src_file")
+    df_reviews = df_reviews_raw.withColumn("_rn", F.row_number().over(reviews_w)) \
+                               .filter(F.col("_rn") == 1).drop("_rn", "_src_file")
 
     # 🧪 Bronze Input Validation
-    store_count = df_store.count()
+    store_count   = df_store.count()
     reviews_count = df_reviews.count()
-    print(f"📊 [CHECK] Bronze input: {store_count} store records, {reviews_count} review records")
-    
+    print(f"📊 [CHECK] Bronze input: {store_count} store records (deduplicated), {reviews_count} review records")
+
     if store_count == 0:
-        print("❌ [FATAL] Bronze store_raw.json is empty! Run extract first.")
+        print("❌ [FATAL] No store_raw_*.json files found in data/bronze/! Run extract first.")
         spark.stop()
         sys.exit(1)
     if reviews_count == 0:
-        print("❌ [FATAL] Bronze reviews_raw.json is empty! Run extract first.")
+        print("❌ [FATAL] No reviews_raw_*.json files found in data/bronze/! Run extract first.")
         spark.stop()
         sys.exit(1)
 
