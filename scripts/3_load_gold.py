@@ -3,12 +3,14 @@ from pyspark.sql.window import Window
 from pyspark.sql import functions as F
 import os, urllib.request, sys
 
-# 🔑 Database Configuration (reads from .env / environment variables)
-DB_URL  = os.getenv("DB_URL",  "jdbc:postgresql://postgres_general:5432/sessiondb")
-DB_USER = os.getenv("DB_USER", "admin")
-DB_PASS = os.getenv("DB_PASS", "admin")
+#  Database Configuration (reads from .env / environment variables)
+DB_URL  = os.getenv("DB_URL")
+DB_USER = os.getenv("DB_USER")
+DB_PASS = os.getenv("DB_PASS")
 
-# 📦 Auto-download JDBC driver if missing
+if not all([DB_URL, DB_USER, DB_PASS]):
+    raise EnvironmentError("❌ DB_URL, DB_USER, or DB_PASS not set in environment variables.")
+#  Auto-download JDBC driver if missing
 JDBC_DRIVER_PATH = "drivers/postgresql-42.7.4.jar"
 if not os.path.exists(JDBC_DRIVER_PATH):
     os.makedirs("drivers", exist_ok=True)
@@ -20,13 +22,13 @@ if not os.path.exists(JDBC_DRIVER_PATH):
     print("✅ JDBC driver downloaded.")
 
 # ============================================================
-# 📋 Silver → Gold Table Mapping
+#  Silver → Gold Table Mapping
 # Each entry defines:
 #   - silver_path: where the CSV lives
 #   - gold_table:  target PostgreSQL table name
 #   - key_cols:    composite key for upsert deduplication
 #
-# 🐛 FIX: Previously ALL tables used only ["AppID"] as the key,
+#  FIX: Previously ALL tables used only ["AppID"] as the key,
 #    which collapsed child tables (genres, categories, achievements,
 #    screenshots, movies, dlc) to 1 row per game.
 #    Now each table uses its proper composite key.
@@ -87,7 +89,7 @@ def upsert_table(spark, silver_path, table_name, key_cols):
     
     df_new = df_new.withColumn("Last_Updated", F.current_timestamp())
 
-    # 🛡️ Drop rows where any key column is null or blank (e.g. empty Achievement_Name from Steam API)
+    # ️ Drop rows where any key column is null or blank (e.g. empty Achievement_Name from Steam API)
     for key_col in key_cols:
         if key_col in df_new.columns:
             df_new = df_new.filter(
@@ -225,7 +227,7 @@ def load_steam_gold():
                 "status": f"EXCEPTION: {e}",
             })
     
-    # 🧪 Run post-load validation
+    #  Run post-load validation
     passed = validate_results(results)
     
     print("🎉 [TASK COMPLETE] All Gold tables secured. Power BI / pgAdmin ready.")

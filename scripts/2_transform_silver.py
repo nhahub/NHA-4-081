@@ -5,7 +5,7 @@ import re
 import os, sys, urllib.request
 
 # ============================================================
-# 🛡️ Safe Struct Field Extractor
+# ️ Safe Struct Field Extractor
 # Some games return requirements as "" instead of {"minimum": ...}
 # Spark infers the column as STRING, so .minimum crashes.
 # This checks the schema first and returns None if it's not a struct.
@@ -24,7 +24,7 @@ def safe_struct_field(df, col_name, field_name, alias_name, transform_udf=None):
     return F.lit(None).cast(StringType()).alias(alias_name)
 
 # ============================================================
-# 🪄 HTML Stripper UDF - Strips all HTML tags from descriptions
+#  HTML Stripper UDF - Strips all HTML tags from descriptions
 # ============================================================
 def strip_html(text):
     if text is None:
@@ -36,7 +36,7 @@ def strip_html(text):
 def transform_silver_layer():
     print("🚀 [TASK START] Igniting PySpark Engine...")
     
-    # 📦 Auto-download JDBC driver if missing (Needed for Jupiter JVM initialization)
+    #  Auto-download JDBC driver if missing (Needed for Jupiter JVM initialization)
     JDBC_DRIVER_PATH = "drivers/postgresql-42.7.4.jar"
     if not os.path.exists(JDBC_DRIVER_PATH):
         os.makedirs("drivers", exist_ok=True)
@@ -77,7 +77,7 @@ def transform_silver_layer():
     df_reviews = df_reviews_raw.withColumn("_rn", F.row_number().over(reviews_w)) \
                                .filter(F.col("_rn") == 1).drop("_rn", "_src_file")
 
-    # 🧪 Bronze Input Validation
+    #  Bronze Input Validation
     store_count   = df_store.count()
     reviews_count = df_reviews.count()
     print(f"📊 [CHECK] Bronze input: {store_count} store records (deduplicated), {reviews_count} review records")
@@ -99,7 +99,7 @@ def transform_silver_layer():
     df_joined = df_store.join(df_reviews, on="appid", how="left")
 
     # ============================================================
-    # 📊 TABLE 1: games_main.csv — The Master Fact Table (~40 cols)
+    #  TABLE 1: games_main.csv — The Master Fact Table (~40 cols)
     # ============================================================
     print("🪄 [PROCESS] Forging games_main.csv...")
     
@@ -110,7 +110,7 @@ def transform_silver_layer():
         F.col("is_free").cast(BooleanType()).alias("Is_Free"),
         F.coalesce(F.col("required_age").cast(IntegerType()), F.lit(0)).alias("Required_Age"),
         
-        # 🪄 SPELL: Strip HTML from description fields
+        #  SPELL: Strip HTML from description fields
         strip_html_udf(F.col("short_description")).alias("Short_Description"),
         strip_html_udf(F.col("detailed_description")).alias("Detailed_Description"),
         strip_html_udf(F.col("about_the_game")).alias("About_The_Game"),
@@ -119,33 +119,33 @@ def transform_silver_layer():
         # Press reviews (some games have critic quotes with newlines)
         strip_html_udf(F.col("reviews")).alias("Press_Reviews"),
         
-        # 🌐 Website
+        #  Website
         F.col("website").alias("Website"),
         
-        # 🖼️ ALL the Images
+        # ️ ALL the Images
         F.col("header_image").alias("Header_Image"),
         F.col("capsule_image").alias("Capsule_Image"),
         F.col("capsule_imagev5").alias("Capsule_Image_V5"),
         F.col("background").alias("Background_Image"),
         F.col("background_raw").alias("Background_Raw"),
         
-        # 💰 Pricing (Full breakdown)
+        #  Pricing (Full breakdown)
         (F.coalesce(F.col("price_overview.final"), F.lit(0)) / 100).cast(FloatType()).alias("Price_USD"),
         F.col("price_overview.final_formatted").alias("Price_Formatted"),
         F.col("price_overview.currency").alias("Currency"),
         (F.coalesce(F.col("price_overview.initial"), F.lit(0)) / 100).cast(FloatType()).alias("Initial_Price_USD"),
         F.coalesce(F.col("price_overview.discount_percent"), F.lit(0)).alias("Discount_Percent"),
         
-        # 🖥️ Platforms
+        # ️ Platforms
         F.coalesce(F.col("platforms.windows"), F.lit(False)).alias("Is_Windows"),
         F.coalesce(F.col("platforms.mac"), F.lit(False)).alias("Is_Mac"),
         F.coalesce(F.col("platforms.linux"), F.lit(False)).alias("Is_Linux"),
         
-        # 👨‍💻 Developers & Publishers (Array → comma-separated)
+        # ‍ Developers & Publishers (Array → comma-separated)
         F.concat_ws(", ", F.col("developers")).alias("Developers"),
         F.concat_ws(", ", F.col("publishers")).alias("Publishers"),
         
-        # 🔧 System Requirements (HTML stripped)
+        #  System Requirements (HTML stripped)
         # Some games return requirements as "" instead of a struct,
         # so safe_struct_field() checks the schema before dot-access.
         safe_struct_field(df_joined, "pc_requirements", "minimum", "PC_Requirements_Min", strip_html_udf),
@@ -155,14 +155,14 @@ def transform_silver_layer():
         safe_struct_field(df_joined, "linux_requirements", "minimum", "Linux_Requirements_Min", strip_html_udf),
         safe_struct_field(df_joined, "linux_requirements", "recommended", "Linux_Requirements_Rec", strip_html_udf),
         
-        # 📅 Release Date
+        #  Release Date
         F.col("release_date.date").alias("Release_Date"),
         F.coalesce(F.col("release_date.coming_soon"), F.lit(False)).alias("Coming_Soon"),
         
-        # 📜 Legal (often has <br> and newlines)
+        #  Legal (often has <br> and newlines)
         strip_html_udf(F.col("legal_notice")).alias("Legal_Notice"),
 
-        # 🆘 Support Info
+        #  Support Info
         F.col("support_info.url").alias("Support_URL"),
         F.col("support_info.email").alias("Support_Email"),
         
@@ -170,27 +170,27 @@ def transform_silver_layer():
         F.col("metacritic.score").alias("Metacritic_Score"),
         F.col("metacritic.url").alias("Metacritic_URL"),
         
-        # 👍 Recommendations & Achievements totals
+        #  Recommendations & Achievements totals
         F.coalesce(F.col("recommendations.total"), F.lit(0)).alias("Recommendations_Total"),
         F.coalesce(F.col("achievements.total"), F.lit(0)).alias("Achievements_Total"),
         
-        # 🔞 Content Descriptors
+        #  Content Descriptors
         strip_html_udf(F.col("content_descriptors.notes")).alias("Content_Descriptor_Notes"),
         
-        # 📝 Reviews from reviews_raw.json (joined data)
+        #  Reviews from reviews_raw.json (joined data)
         F.coalesce(F.col("total_positive"), F.lit(0)).alias("Positive_Reviews"),
         F.coalesce(F.col("total_negative"), F.lit(0)).alias("Negative_Reviews"),
         F.col("review_score").alias("Review_Score"),
         F.col("review_score_desc").alias("Review_Score_Desc"),
         F.coalesce(F.col("total_reviews"), F.lit(0)).alias("Total_Reviews"),
         
-        # 🎮 Live Player Count
+        #  Live Player Count
         F.coalesce(F.col("live_peak_players"), F.lit(0)).alias("Current_Players")
     )
     df_main = df_main.dropDuplicates(["AppID"])
 
     # ============================================================
-    # 🔍 Column Logic Checks (warnings only — never block the pipeline)
+    #  Column Logic Checks (warnings only — never block the pipeline)
     # Uses filter() on the already-computed DataFrame — zero extra Spark jobs.
     # ============================================================
     logic_warnings = []
@@ -233,7 +233,7 @@ def transform_silver_layer():
     print("✅ [SAVED] games_main.csv")
 
     # ============================================================
-    # 🎭 TABLE 2: games_genres.csv — Exploded genres
+    #  TABLE 2: games_genres.csv — Exploded genres
     # ============================================================
     print("🪄 [PROCESS] Forging games_genres.csv...")
     
@@ -250,7 +250,7 @@ def transform_silver_layer():
     print("✅ [SAVED] games_genres.csv")
 
     # ============================================================
-    # 🏷️ TABLE 3: games_categories.csv — Exploded categories
+    # ️ TABLE 3: games_categories.csv — Exploded categories
     # ============================================================
     print("🪄 [PROCESS] Forging games_categories.csv...")
     
@@ -267,7 +267,7 @@ def transform_silver_layer():
     print("✅ [SAVED] games_categories.csv")
 
     # ============================================================
-    # 📸 TABLE 4: games_screenshots.csv — All screenshot URLs
+    #  TABLE 4: games_screenshots.csv — All screenshot URLs
     # ============================================================
     print("🪄 [PROCESS] Forging games_screenshots.csv...")
     
@@ -285,7 +285,7 @@ def transform_silver_layer():
     print("✅ [SAVED] games_screenshots.csv")
 
     # ============================================================
-    # 🎬 TABLE 5: games_movies.csv — All trailer/video data
+    #  TABLE 5: games_movies.csv — All trailer/video data
     # ============================================================
     print("🪄 [PROCESS] Forging games_movies.csv...")
     
@@ -304,7 +304,7 @@ def transform_silver_layer():
     print("✅ [SAVED] games_movies.csv")
 
     # ============================================================
-    # 🧩 TABLE 6: games_dlc.csv — DLC AppIDs
+    #  TABLE 6: games_dlc.csv — DLC AppIDs
     # ============================================================
     print("🪄 [PROCESS] Forging games_dlc.csv...")
     
@@ -317,7 +317,7 @@ def transform_silver_layer():
     print("✅ [SAVED] games_dlc.csv")
 
     # ============================================================
-    # 🏆 TABLE 7: games_achievements.csv — Highlighted achievements
+    #  TABLE 7: games_achievements.csv — Highlighted achievements
     # ============================================================
     print("🪄 [PROCESS] Forging games_achievements.csv...")
     
@@ -334,7 +334,7 @@ def transform_silver_layer():
     print("✅ [SAVED] games_achievements.csv")
 
     # ============================================================
-    # 🧪 Post-Transform Validation
+    #  Post-Transform Validation
     # ============================================================
     print("\n" + "=" * 60)
     print("🧪 [VALIDATION] Post-Transform Integrity Check")

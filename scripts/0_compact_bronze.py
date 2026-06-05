@@ -66,8 +66,8 @@ def parse_batch_files(bronze_dir):
 
 def stream_merge(input_files, output_path):
     """
-    Merge a list of JSON array files into one output file using a streaming
-    writer — avoids loading everything into RAM simultaneously.
+    Merge a list of JSON array files into one output file using a true streaming
+    line-by-line text reader. This avoids json.load() OOM spikes (Exit Code -9).
     Returns the total number of records written.
     """
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -79,16 +79,23 @@ def stream_merge(input_files, output_path):
 
         for filepath in sorted(input_files):
             with open(filepath, "r", encoding="utf-8") as f:
-                try:
-                    records = json.load(f)
-                except json.JSONDecodeError:
-                    print(f"   ⚠️ Skipping malformed file: {filepath}")
-                    continue
+                for line in f:
+                    line = line.strip()
+                    # Skip the opening/closing brackets and empty lines
+                    if line in ("[", "]", ""):
+                        continue
+                    
+                    # Strip the trailing comma if present so we can format it cleanly
+                    if line.endswith(","):
+                        line = line[:-1]
+                        
+                    if not line:
+                        continue
 
-                for record in records:
+                    # Write the raw JSON string
                     if not first_record:
                         out.write(",\n")
-                    out.write(json.dumps(record, ensure_ascii=False))
+                    out.write(line)
                     first_record = False
                     total += 1
 

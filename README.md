@@ -17,6 +17,7 @@ This V2 architecture completely dismantles the manual, static nature of V1 and r
 * **Automated vs Manual:** Traded Jupyter "Run All" clicks for a fully autonomous **Apache Airflow** DAG orchestration schedule.
 * **Intelligent Upserts vs Overwrites:** Implemented Python Priority Queues and PySpark `Window` functions to identify stale games, discover new games incrementally, and deduplicate historical data upon PostgreSQL ingestion without wiping the database.
 * **Dynamic JSON vs Flat Strings:** Upgraded PySpark scripts to computationally explode deeply nested JSON arrays (Achievements, DLCs, Genres) on the fly into a normalized 7-table Star Schema.
+* **Production-Grade Hardening:** Added asynchronous Bronze compaction to prevent OOM memory spikes, decoupled 3-day compaction cycles using Airflow `ShortCircuitOperator`, integrated offline `pytest` suites, and enforced data integrity thresholds before Gold layer commits.
 
 ---
 
@@ -100,4 +101,16 @@ This pipeline was designed with cloud migration in mind. In the next phase, the 
 3. Navigate to `localhost:8089` (Airflow UI), unpause the DAG `steam_hourly_pipeline`, and watch the jobs execute interactively.
 4. Open the `Dashboard.pbix` in Power BI and import the `Steam_Dark_Theme.json` file via the View > Themes tab to instantly apply the dark-mode styling.
 
-![Airflow DAG](images/airflow_dag.png)
+![Airflow DAG: V2 Pipeline with Compaction](images/airflow_v2_dag.png)
+
+---
+
+## 📈 Power BI Dashboard Highlights
+
+The reporting layer features an advanced, dark-mode stylized Power BI dashboard designed for market analysis and sentiment tracking.
+
+### Market Overview & Game Reception
+![Page 1: Market Overview](images/dashboard_market_overview.png)
+
+### Developer & Tag Performance
+![Page 2: Developer & Tag Analysis](images/dashboard_developer_analysis.png)

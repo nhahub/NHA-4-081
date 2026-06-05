@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-# 🔑 Configuration (reads from .env / environment variables)
+#  Configuration (reads from .env / environment variables)
 API_KEY = os.getenv("STEAM_API_KEY")
 if not API_KEY:
     raise EnvironmentError("❌ STEAM_API_KEY not set. Check your .env file or environment variables.")
@@ -15,11 +15,11 @@ if not API_KEY:
 BATCH_SIZE = int(os.getenv("BATCH_SIZE", "100"))
 STALE_HOURS = int(os.getenv("STALE_HOURS", "24"))  # Refresh games older than this
 
-# 📂 File paths
+#  File paths
 BRONZE_DIR     = "data/bronze"
 REGISTRY_PATH  = "data/game_registry.json"
 
-# 🛡️ Network Armor
+# ️ Network Armor
 retry_strategy = Retry(total=3, status_forcelist=[429, 500, 502, 503, 504], backoff_factor=1)
 adapter = HTTPAdapter(max_retries=retry_strategy)
 http = requests.Session()
@@ -30,7 +30,7 @@ http.headers.update({
 
 
 # ============================================================
-# 📋 Game Registry — Tracks what we've fetched and when
+#  Game Registry — Tracks what we've fetched and when
 # ============================================================
 def load_registry():
     if os.path.exists(REGISTRY_PATH):
@@ -57,7 +57,7 @@ def save_bronze(records, filepath):
 
 
 # ============================================================
-# 🔍 Discovery — Find new games beyond the Charts list
+#  Discovery — Find new games beyond the Charts list
 # ============================================================
 def discover_new_games(registry, limit=200):
     """
@@ -79,7 +79,7 @@ def discover_new_games(registry, limit=200):
             if str(app['appid']) not in known_ids and app.get('name', '').strip()
         ]
         
-        # 🌟 MAGIC TWEAK: Sort AppIDs descending. 
+        #  MAGIC TWEAK: Sort AppIDs descending. 
         # Steam assigns AppIDs sequentially. Higher AppID = Newer Game.
         # This forces the pipeline to always pull the newest releases instead of ancient random games!
         new_apps.sort(reverse=True)
@@ -92,7 +92,7 @@ def discover_new_games(registry, limit=200):
 
 
 # ============================================================
-# 🎯 Priority Queue — Decide which games to fetch this run
+#  Priority Queue — Decide which games to fetch this run
 # ============================================================
 def build_priority_queue(charts_ranks, registry, discovery_ids):
     """
@@ -153,7 +153,7 @@ def build_priority_queue(charts_ranks, registry, discovery_ids):
 
 
 # ============================================================
-# 🚀 Main Extraction
+#  Main Extraction
 # ============================================================
 def extract_steam_bronze_data():
     print("🚀 [TASK START] Extracting Bronze Data (Incremental)...")
@@ -266,7 +266,7 @@ def extract_steam_bronze_data():
             failed_ids.append(appid)
 
     # ============================================================
-    # 🧪 Pre-Save Validation
+    #  Pre-Save Validation
     # ============================================================
     print("\n" + "=" * 60)
     print("🧪 [VALIDATION] Pre-Save Integrity Check")

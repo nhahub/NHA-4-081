@@ -317,13 +317,21 @@ def test_gold_layer(results):
         results.warn("psycopg2 not installed — skipping Gold tests. Install with: pip install psycopg2-binary")
         return results
     
-    db_url = os.getenv("DB_URL", "jdbc:postgresql://postgres_general:5432/sessiondb")
+    db_url = os.getenv("DB_URL")
+    if not db_url:
+        results.warn("DB_URL not set — skipping Gold tests.")
+        return results
+
     db_host = db_url.split("//")[1].split(":")[0] if "//" in db_url else "postgres_general"
     db_port = db_url.split(":")[-1].split("/")[0] if db_url.count(":") >= 3 else "5432"
     db_name = db_url.split("/")[-1] if "/" in db_url else "sessiondb"
-    db_user = os.getenv("DB_USER", "admin")
-    db_pass = os.getenv("DB_PASS", "admin")
+    db_user = os.getenv("DB_USER")
+    db_pass = os.getenv("DB_PASS")
     
+    if not all([db_url, db_user, db_pass]):
+        results.warn("DB_USER or DB_PASS not set — skipping Gold tests.")
+        return results
+
     try:
         conn = psycopg2.connect(
             host=db_host, port=db_port,
