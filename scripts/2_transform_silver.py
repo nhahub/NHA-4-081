@@ -188,6 +188,47 @@ def transform_silver_layer():
         F.coalesce(F.col("live_peak_players"), F.lit(0)).alias("Current_Players")
     )
     df_main = df_main.dropDuplicates(["AppID"])
+
+    # ============================================================
+    # 🔍 Column Logic Checks (warnings only — never block the pipeline)
+    # Uses filter() on the already-computed DataFrame — zero extra Spark jobs.
+    # ============================================================
+    logic_warnings = []
+
+    neg_price = df_main.filter(F.col("Price_USD") < 0).count()
+    if neg_price > 0:
+        logic_warnings.append(f"⚠️  {neg_price} rows have negative Price_USD")
+
+    bad_discount = df_main.filter(
+        (F.col("Discount_Percent") < 0) | (F.col("Discount_Percent") > 100)
+    ).count()
+    if bad_discount > 0:
+        logic_warnings.append(f"⚠️  {bad_discount} rows have Discount_Percent outside 0-100")
+
+    bad_reviews = df_main.filter(
+        F.col("Positive_Reviews") > F.col("Total_Reviews")
+    ).count()
+    if bad_reviews > 0:
+        logic_warnings.append(f"⚠️  {bad_reviews} rows where Positive_Reviews > Total_Reviews")
+
+    neg_recommendations = df_main.filter(F.col("Recommendations_Total") < 0).count()
+    if neg_recommendations > 0:
+        logic_warnings.append(f"⚠️  {neg_recommendations} rows have negative Recommendations_Total")
+
+    bad_review_score = df_main.filter(
+        F.col("Review_Score").isNotNull() &
+        ((F.col("Review_Score") < 0) | (F.col("Review_Score") > 9))
+    ).count()
+    if bad_review_score > 0:
+        logic_warnings.append(f"⚠️  {bad_review_score} rows have Review_Score outside 0-9")
+
+    if logic_warnings:
+        print("\n🔍 [LOGIC CHECKS] Column anomalies detected in games_main:")
+        for w in logic_warnings:
+            print(f"   {w}")
+    else:
+        print("🔍 [LOGIC CHECKS] All column constraints satisfied ✅")
+
     df_main.coalesce(1).write.option("escape", '"').csv("data/silver/games_main", header=True, mode="overwrite")
     print("✅ [SAVED] games_main.csv")
 
