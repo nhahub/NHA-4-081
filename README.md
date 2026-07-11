@@ -125,16 +125,28 @@ The destination PostgreSQL database is organized into a Star Schema optimized fo
 
 ## 🤖 Game Success Prediction Model
 
-As an extension to the core pipeline, a **Random Forest** classification model was developed to predict whether a game will succeed on the Steam platform.
+An interactive **Random Forest** classification model that predicts whether a game will succeed on the Steam platform based on its specifications.
 
 | Component | Detail |
 |---|---|
 | Algorithm | Random Forest (Scikit-learn) |
 | Training Data | Gold layer `games_main` table |
-| Input Features | Price, Platform flags, Achievements, Recommendations, Positive/Negative reviews, Metacritic score, Discount % |
+| Input Features | Price, Discount %, Total Reviews, Recommendations, Achievements, DLC Count, Category Tags, Release Date, Genre |
 | Target Variable | Binary — Successful / Not Successful |
-| Success Definition | Positive reviews exceed defined threshold relative to total reviews |
+| Output | Predicted review score + Sentiment bucket + Feature importance |
 
+### How It Works
+1. Enter the game's spec sheet — Price, Reviews, Recommendations, Achievements, Genre, and more
+2. Click **Run Prediction**
+3. The model returns the predicted review score, the sentiment tier, and which features are driving the result
+
+### Feature Importance
+The model ranks which inputs have the most impact on the prediction:
+- **Reviews** and **Price** are the strongest predictors
+- **Achievements** and **Recommendations** follow closely
+- **Genre**, **Release Date**, and **Discount** have moderate influence
+
+![Game Success Prediction Model](images/model1_png.jpeg)
 ---
 
 ## 📈 Power BI Dashboard
