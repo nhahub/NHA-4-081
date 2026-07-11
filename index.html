@@ -358,7 +358,16 @@
         <div class="field-row">
           <div class="field full">
             <label for="genre">Genre</label>
-            <select id="genre" required></select>
+            <select id="genre" required>
+             <option value="Action" selected>Action</option>
+             <option value="Adventure">Adventure</option>
+             <option value="Casual">Casual</option>
+             <option value="Indie">Indie</option>
+             <option value="RPG">RPG</option>
+             <option value="Simulation">Simulation</option>
+             <option value="Sports">Sports</option>
+             <option value="Strategy">Strategy</option>
+            </select>
           </div>
         </div>
 
@@ -382,7 +391,7 @@
 </div>
 
 <script>
-const API_BASE = 'http://127.0.0.1:8000';
+const API_BASE = 'https://incredible-amazement-production-d7c3.up.railway.app';
 let FEATURE_IMPORTANCE = {};
 
 const bucketColorVar = {
@@ -392,18 +401,19 @@ const bucketColorVar = {
 };
 
 async function loadMeta(){
-  const res = await fetch(`${API_BASE}/api/meta`);
-  const data = await res.json();
-  const select = document.getElementById('genre');
-  data.genres.forEach(g => {
-    const opt = document.createElement('option');
-    opt.value = g;
-    opt.textContent = g;
-    if (g === 'Action') opt.selected = true;
-    select.appendChild(opt);
-  });
-  FEATURE_IMPORTANCE = data.feature_importance;
-  renderImportance(FEATURE_IMPORTANCE);
+  try {
+    const res = await fetch(`${API_BASE}/api/meta`);
+    if (res.ok) {
+      const data = await res.json();
+      FEATURE_IMPORTANCE = data.feature_importance;
+      renderImportance(FEATURE_IMPORTANCE);
+    }
+  } catch (err) {
+    console.log("Backend offline, using fallback UI presets.");
+    // Fallback importance values so the right-hand side graphics still load
+    FEATURE_IMPORTANCE = {"recommendations": 40, "num_reviews": 35, "price": 15, "achievement_count": 10};
+    renderImportance(FEATURE_IMPORTANCE);
+  }
 }
 
 function renderImportance(imp){
