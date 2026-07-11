@@ -146,7 +146,7 @@ The model ranks which inputs have the most impact on the prediction:
 - **Achievements** and **Recommendations** follow closely
 - **Genre**, **Release Date**, and **Discount** have moderate influence
 
-![Game Success Prediction Model](images/model1_png.jpeg)
+![Game Success Prediction Model](images/model1.png.jpeg)
 ---
 
 ## 📈 Power BI Dashboard
