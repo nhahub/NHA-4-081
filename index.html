@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Review Score Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#0f1115;
+    --surface:#171a21;
+    --surface-raised:#20242e;
+    --line: #2b303b;
+    --amber:#e3a54a;
+    --amber-dim:#8a6a35;
+    --teal:#4f8a93;
+    --red:#b6543f;
+    --text:#ece7db;
+    --muted:#7d818c;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--void);
+    color:var(--text);
+    font-family:'Space Grotesk', sans-serif;
+    min-height:100vh;
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(227,165,74,0.05), transparent 40%),
+      radial-gradient(circle at 85% 90%, rgba(79,138,147,0.06), transparent 45%);
+  }
+  .mono{font-family:'IBM Plex Mono', monospace;}
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding:40px 24px 80px;
+  }
+  header.top{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:16px;
+    margin-bottom:36px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:20px;
+    flex-wrap:wrap;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--amber);
+    margin:0 0 6px;
+  }
+  h1{
+    font-size:32px;
+    font-weight:700;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  .subtitle{
+    color:var(--muted);
+    font-size:14px;
+    max-width:360px;
+    text-align:right;
+    line-height:1.5;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns: 1.05fr 1fr;
+    gap:28px;
+    align-items:start;
+  }
+  @media (max-width: 880px){
+    .grid{grid-template-columns:1fr;}
+    .subtitle{text-align:left;}
+  }
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:24px;
+  }
+  .panel h2{
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:0.14em;
+    color:var(--muted);
+    margin:0 0 20px;
+    font-family:'IBM Plex Mono', monospace;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .panel h2::after{
+    content:'';
+    flex:1;
+    height:1px;
+    background:var(--line);
+  }
+  .field-row{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:14px;
+    margin-bottom:14px;
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .field.full{grid-column:1 / -1;}
+  label{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--muted);
+    font-family:'IBM Plex Mono', monospace;
+  }
+  input, select{
+    background:var(--void);
+    border:1px solid var(--line);
+    color:var(--text);
+    padding:10px 12px;
+    border-radius:3px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:14px;
+    width:100%;
+    transition:border-color .15s ease;
+  }
+  input:focus, select:focus{
+    outline:none;
+    border-color:var(--amber);
+  }
+  input[type="range"]{
+    padding:0;
+    accent-color:var(--amber);
+  }
+  select{
+    appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' stroke='%237d818c' fill='none' stroke-width='1.5'/></svg>");
+    background-repeat:no-repeat;
+    background-position:right 12px center;
+    padding-right:32px;
+  }
+  .discount-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .discount-row output{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    color:var(--amber);
+    min-width:36px;
+    text-align:right;
+  }
+  button.run{
+    width:100%;
+    margin-top:10px;
+    background:var(--amber);
+    color:#181206;
+    border:none;
+    padding:14px;
+    border-radius:3px;
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    cursor:pointer;
+    transition:filter .15s ease, transform .05s ease;
+  }
+  button.run:hover{filter:brightness(1.08);}
+  button.run:active{transform:translateY(1px);}
+  button.run:disabled{
+    background:var(--surface-raised);
+    color:var(--muted);
+    cursor:not-allowed;
+  }
+  .error-msg{
+    color:var(--red);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    margin-top:10px;
+    display:none;
+  }
+
+  /* Result panel */
+  .readout{
+    text-align:center;
+    padding:20px 10px 28px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:22px;
+  }
+  .readout .score{
+    font-family:'IBM Plex Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size:76px;
+    font-weight:600;
+    color:var(--muted);
+    line-height:1;
+    letter-spacing:-0.02em;
+    text-shadow: 0 0 0 transparent;
+    transition: color .3s ease, text-shadow .3s ease;
+  }
+  .readout .score.lit{
+    color:var(--amber);
+    text-shadow: 0 0 24px rgba(227,165,74,0.35);
+  }
+  .readout .score-suffix{
+    font-size:22px;
+    color:var(--muted);
+  }
+  .readout .bucket{
+    display:inline-block;
+    margin-top:14px;
+    padding:6px 16px;
+    border-radius:999px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    border:1px solid var(--line);
+    color:var(--muted);
+  }
+  .gauge{
+    height:6px;
+    background:var(--void);
+    border-radius:4px;
+    margin:18px 4px 0;
+    overflow:hidden;
+    border:1px solid var(--line);
+  }
+  .gauge-fill{
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg, var(--red), var(--amber), var(--teal));
+    transition:width .6s ease;
+  }
+  .empty-state{
+    text-align:center;
+    color:var(--muted);
+    font-size:13px;
+    padding:40px 10px;
+    line-height:1.6;
+  }
+  .bars{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .bar-row{
+    display:grid;
+    grid-template-columns: 120px 1fr 42px;
+    align-items:center;
+    gap:10px;
+  }
+  .bar-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+  }
+  .bar-track{
+    height:8px;
+    background:var(--void);
+    border-radius:3px;
+    overflow:hidden;
+    border:1px solid var(--line);
+  }
+  .bar-fill{
+    height:100%;
+    background:var(--teal);
+    width:0%;
+    transition:width .5s ease;
+  }
+  .bar-val{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--muted);
+    text-align:right;
+  }
+  footer{
+    text-align:center;
+    color:var(--muted);
+    font-size:11px;
+    font-family:'IBM Plex Mono', monospace;
+    margin-top:50px;
+    letter-spacing:0.04em;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="eyebrow">LightGBM &middot; regression &middot; v3</p>
+      <h1>Review Score Engine</h1>
+    </div>
+    <p class="subtitle">Enter a game's spec sheet and get the model's predicted Steam review score, its sentiment bucket, and which inputs are driving the number.</p>
+  </header>
+
+  <div class="grid">
+    <section class="panel">
+      <h2>Game Spec</h2>
+      <form id="predict-form">
+        <div class="field-row">
+          <div class="field">
+            <label for="price">Price (USD)</label>
+            <input type="number" id="price" step="0.01" min="0" value="19.99" required />
+          </div>
+          <div class="field">
+            <label for="discount_pct">Discount %</label>
+            <div class="discount-row">
+              <input type="range" id="discount_pct" min="0" max="100" value="0" />
+              <output id="discount_out">0%</output>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="num_reviews">Total Reviews</label>
+            <input type="number" id="num_reviews" min="0" value="300" required />
+          </div>
+          <div class="field">
+            <label for="recommendations">Recommendations</label>
+            <input type="number" id="recommendations" min="0" value="500" required />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="achievement_count">Achievements</label>
+            <input type="number" id="achievement_count" min="0" value="20" required />
+          </div>
+          <div class="field">
+            <label for="dlc_count">DLC Count</label>
+            <input type="number" id="dlc_count" min="0" value="1" required />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="category_count">Category Tags</label>
+            <input type="number" id="category_count" min="0" value="5" required />
+          </div>
+          <div class="field">
+            <label for="release_date">Release Date</label>
+            <input type="date" id="release_date" value="2023-06-15" required />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field full">
+            <label for="genre">Genre</label>
+            <select id="genre" required></select>
+          </div>
+        </div>
+
+        <button type="submit" class="run" id="run-btn">Run Prediction</button>
+        <p class="error-msg" id="error-msg"></p>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Readout</h2>
+      <div id="result-area">
+        <div class="empty-state" id="empty-state">
+          Fill in the spec sheet on the left and run the model to see a predicted score.
+        </div>
+      </div>
+      <div id="importance-area" style="margin-top:24px;"></div>
+    </section>
+  </div>
+
+  <footer>Trained on Steam Market Live Auto Pipeline (Bronze / Silver / Gold) &middot; predictions are model estimates, not guarantees</footer>
+</div>
+
+<script>
+const API_BASE = 'http://127.0.0.1:8000';
+let FEATURE_IMPORTANCE = {};
+
+const bucketColorVar = {
+  0: 'var(--red)', 1: 'var(--red)', 2: 'var(--red)',
+  3: 'var(--amber)',
+  4: 'var(--teal)', 5: 'var(--teal)', 6: 'var(--teal)'
+};
+
+async function loadMeta(){
+  const res = await fetch(`${API_BASE}/api/meta`);
+  const data = await res.json();
+  const select = document.getElementById('genre');
+  data.genres.forEach(g => {
+    const opt = document.createElement('option');
+    opt.value = g;
+    opt.textContent = g;
+    if (g === 'Action') opt.selected = true;
+    select.appendChild(opt);
+  });
+  FEATURE_IMPORTANCE = data.feature_importance;
+  renderImportance(FEATURE_IMPORTANCE);
+}
+
+function renderImportance(imp){
+  const labels = {
+    price: 'Price', discount_pct: 'Discount', achievement_count: 'Achievements',
+    recommendations: 'Recs', num_reviews: 'Reviews', dlc_count: 'DLC',
+    category_count: 'Categories', release_month: 'Rel. Month',
+    release_year: 'Rel. Year', days_since_release: 'Days Live', genre_enc: 'Genre'
+  };
+  const entries = Object.entries(imp).sort((a,b) => b[1]-a[1]);
+  const max = entries[0][1];
+  const container = document.getElementById('importance-area');
+  container.innerHTML = `<h2>What Drives This Prediction</h2><div class="bars">${
+    entries.map(([key,val]) => `
+      <div class="bar-row">
+        <span class="bar-label">${labels[key] || key}</span>
+        <div class="bar-track"><div class="bar-fill" style="width:${(val/max*100).toFixed(1)}%"></div></div>
+        <span class="bar-val">${val}</span>
+      </div>
+    `).join('')
+  }</div>`;
+}
+
+document.getElementById('discount_pct').addEventListener('input', (e) => {
+  document.getElementById('discount_out').textContent = `${e.target.value}%`;
+});
+
+document.getElementById('predict-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('run-btn');
+  const errorEl = document.getElementById('error-msg');
+  errorEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Running…';
+
+  const payload = {
+    price: parseFloat(document.getElementById('price').value),
+    discount_pct: parseFloat(document.getElementById('discount_pct').value),
+    achievement_count: parseInt(document.getElementById('achievement_count').value, 10),
+    recommendations: parseInt(document.getElementById('recommendations').value, 10),
+    num_reviews: parseInt(document.getElementById('num_reviews').value, 10),
+    dlc_count: parseInt(document.getElementById('dlc_count').value, 10),
+    category_count: parseInt(document.getElementById('category_count').value, 10),
+    release_date: document.getElementById('release_date').value,
+    genre: document.getElementById('genre').value,
+  };
+
+  try{
+    const res = await fetch(`${API_BASE}/api/predict`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if(!res.ok){
+      throw new Error(data.detail || 'Prediction failed');
+    }
+    renderResult(data);
+  } catch(err){
+    errorEl.textContent = `Error: ${err.message}`;
+    errorEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Run Prediction';
+  }
+});
+
+function renderResult(data){
+  const area = document.getElementById('result-area');
+  const color = bucketColorVar[data.bucket_id] || 'var(--amber)';
+  area.innerHTML = `
+    <div class="readout">
+      <div class="score lit" style="color:${color}; text-shadow:0 0 24px ${color};">
+        ${data.review_score.toFixed(1)}<span class="score-suffix">/100</span>
+      </div>
+      <div class="bucket" style="border-color:${color}; color:${color};">${data.bucket_label}</div>
+      <div class="gauge"><div class="gauge-fill" style="width:${data.review_score}%"></div></div>
+    </div>
+  `;
+}
+
+loadMeta();
+</script>
+</body>
+</html>

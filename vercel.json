@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.py" }
+  ],
+  "functions": {
+    "api/index.py": {
+      "includeFiles": "api/model/**",
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  }
+}
