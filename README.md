@@ -129,7 +129,7 @@ An interactive **Random Forest** classification model that predicts whether a ga
 
 | Component | Detail |
 |---|---|
-| Algorithm | Random Forest (Scikit-learn) |
+| Algorithm | LightGBM Regression |
 | Training Data | Gold layer `games_main` table |
 | Input Features | Price, Discount %, Total Reviews, Recommendations, Achievements, DLC Count, Category Tags, Release Date, Genre |
 | Target Variable | Binary — Successful / Not Successful |
