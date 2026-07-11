@@ -244,10 +244,8 @@ Additional planned enhancements:
 | Mohamed Ahmed Arafa | Project Introduction & Architecture |
 | Ahmed Samir Saad | Bronze & Silver Pipeline |
 | Mohamed Abdelhakim | Gold Layer, Dashboard & Orchestration |
-| Jamal Hany Jamal | ML Model — Design & Training | 
+| Jamal Hany Jamal | Gold Layer, ML Model — Design & Training | 
 | Yousif Amin | ML Model — Evaluation & Results |
-
-**Supervisor:** Mohamed Hamed
 
 ---
 
@@ -263,15 +261,10 @@ The system provides live model estimates alongside a detailed breakdown of featu
 ```text
 ├── vercel.json           # Vercel routing and serverless function configurations
 ├── index.html            # Frontend user interface
-├── requirements.txt      # Python dependencies[cite: 4]
+├── requirements.txt      # Python dependencies 
 └── api/
-    ├── index.py          # FastAPI application backend[cite: 2]
+    ├── index.py          # FastAPI application backend 
     └── model/
-        └── rating_predictor_v3.pkl  # Trained LightGBM model artifact[cite: 2]
+        └── rating_predictor_v3.pkl  # Trained LightGBM model artifact
 
-
-<p align="center">
-  <img src="https://img.shields.io/badge/DEPI-Data%20Engineering%20Track-blue?style=for-the-badge"/>
-  <img src="https://img.shields.io/badge/Status-Completed-green?style=for-the-badge"/>
-  <img src="https://img.shields.io/badge/July-2026-orange?style=for-the-badge"/>
-</p>
+**Supervisor:** Mohamed Hamed
