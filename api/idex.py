@@ -22,9 +22,12 @@ IMPORTANCES = {
 }
 
 app = FastAPI(title="Steam Review Score Predictor")
+
+# Handles cross-origin security limits securely so your Vercel site can call your Railway container
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
