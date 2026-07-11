@@ -254,7 +254,7 @@ Additional planned enhancements:
 
 An interactive web application and API that uses a LightGBM regression model to predict a game's Steam review score and sentiment bucket based on its specifications. 
 
-The system provides live model estimates alongside a detailed breakdown of feature importance, highlighting exactly what variables drive the prediction[cite: 1, 2].
+The system provides live model estimates alongside a detailed breakdown of feature importance, highlighting exactly what variables drive the prediction.
 
 ## Project Structure
 
@@ -267,4 +267,5 @@ The system provides live model estimates alongside a detailed breakdown of featu
     └── model/
         └── rating_predictor_v3.pkl  # Trained LightGBM model artifact
 
+```
 **Supervisor:** Mohamed Hamed
