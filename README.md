@@ -251,6 +251,25 @@ Additional planned enhancements:
 
 ---
 
+
+# Review Score Engine
+
+An interactive web application and API that uses a LightGBM regression model to predict a game's Steam review score and sentiment bucket based on its specifications. 
+
+The system provides live model estimates alongside a detailed breakdown of feature importance, highlighting exactly what variables drive the prediction[cite: 1, 2].
+
+## Project Structure
+
+```text
+├── vercel.json           # Vercel routing and serverless function configurations
+├── index.html            # Frontend user interface
+├── requirements.txt      # Python dependencies[cite: 4]
+└── api/
+    ├── index.py          # FastAPI application backend[cite: 2]
+    └── model/
+        └── rating_predictor_v3.pkl  # Trained LightGBM model artifact[cite: 2]
+
+
 <p align="center">
   <img src="https://img.shields.io/badge/DEPI-Data%20Engineering%20Track-blue?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Status-Completed-green?style=for-the-badge"/>
