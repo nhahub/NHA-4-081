@@ -242,7 +242,7 @@ Additional planned enhancements:
 | Name | Role |
 |---|---|
 | Mohamed Ahmed Arafa | Project Introduction & Architecture |
-| Ahmed Samir Saad | Bronze & Silver Pipeline |
+| Ahmed Samir Saad khatab | Bronze & Silver Pipeline |
 | Mohamed Abdelhakim | Gold Layer, Dashboard & Orchestration |
 | Jamal Hany Jamal | Gold Layer, ML Model — Design & Training | 
 | Yousif Amin | ML Model — Evaluation & Results |
